@@ -4,8 +4,14 @@ CRUD AWS SSM Parameter Store operations for a project.
 
 # Operations
 
-- check -- checks if there are local params that are not stored centrally
-- list -- lists the whole store (local and remote)
-- set -- sets new values remotely
-- apply -- creates confuration files with remote values
-- clean -- checks for unused remote params and cleans them
+- list -- lists the whole store for the files in the project root
+- put -- sets new values remotely
+- apply -- replaces placeholders in configuration files with remote values
+
+# TODOS:
+
+- add project name as a top-level prefix
+- add mode to specify value for empty remote param on the fly when applying
+- validate that the value being put is for a param in the project root
+- add diff and clean
+- prettify listing
