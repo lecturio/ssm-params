@@ -1,3 +1,7 @@
+# Custom
+# Ignore .yml files in the sandbox directory
+sandbox/**.yml
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
