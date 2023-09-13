@@ -3,6 +3,7 @@
 import os
 import src.ssm as ssm
 import shutil
+from tabulate import tabulate
 
 # constant for file eding in .ssm
 SSM_FILE_ENDING = '.ssm'
@@ -11,26 +12,26 @@ SSM_PARAMETER_PREFIX = '<SSM>'
 # constant for the suffix of the SSM parameter
 SSM_PARAMETER_SUFFIX = '</SSM>'
 
+INDEX_FILE = 0
+INDEX_NAME = 1
+INDEX_VALUE = 2
+
 def process(project_root, ssm, list=False, apply=False):
+  table = []
+  headers = ['File', 'Name', 'Value']
   # find all files in the project root recursively that end in .ssm
-  ssm_files = []
   for root, dirs, files in os.walk(project_root):
       for file in files:
           if file.endswith(SSM_FILE_ENDING):
               ssm_file = os.path.join(root, file)
-              param_prefix = '/' + os.path.relpath(ssm_file, project_root).replace('.ssm', '') + '/'
+              param_prefix = '/' + os.path.relpath(ssm_file, project_root).replace('.ssm', '')
               non_ssm_file = ssm_file.replace('.ssm', '')
 
-              # add the file to the list
-              ssm_files.append(ssm_file)
               if apply:
                 shutil.copy(ssm_file, non_ssm_file)
               
               replacements = get_params(ssm_file, ssm, param_prefix, apply)
-              
-              if list:
-                 for replacement in replacements:
-                   print(param_prefix + replacement[0] + ' = ' + replacement[1])
+              table += replacements
 
               if apply:
                 # read the content of non_ssm_file
@@ -39,9 +40,11 @@ def process(project_root, ssm, list=False, apply=False):
 
                 with open(non_ssm_file, 'w') as wf:
                   for replacement in replacements:
-                    content = content.replace(SSM_PARAMETER_PREFIX + replacement[0] + SSM_PARAMETER_SUFFIX, replacement[1])
+                    placeholder = SSM_PARAMETER_PREFIX + replacement[INDEX_NAME] + SSM_PARAMETER_SUFFIX
+                    content = content.replace(placeholder, replacement[INDEX_VALUE])
                     wf.write(content)
-
+  if list:
+    print(tabulate(table, headers, tablefmt='grid'))
               
 def get_params(ssm_file, ssm, param_prefix, stop_on_empty=False):
   # open the file
@@ -64,12 +67,12 @@ def get_params(ssm_file, ssm, param_prefix, stop_on_empty=False):
         # the string to be replaced
         replace = line[prefix_index + len(SSM_PARAMETER_PREFIX):suffix_index]
         # the param name
-        param = param_prefix + replace
+        param = param_prefix + '/' + replace
 
         value = ssm.get_parameter(param)
 
         if not value and stop_on_empty:
           raise Exception('Empty SSM parameter: ' + param)
 
-        replacements.append((replace, value)) 
+        replacements.append((param_prefix, replace, value)) 
         return replacements
