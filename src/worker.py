@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 
-import argparse
 import os
-import sys
-import boto3
-import lib.ssm as ssm
+import src.ssm as ssm
 import shutil
 
 # constant for file eding in .ssm
