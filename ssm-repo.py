@@ -9,7 +9,7 @@ import src.worker as worker
 parser = argparse.ArgumentParser(description='Read SSM Parameter')
 parser.add_argument('--project', help='The project scope', required=True)
 # operation from args
-parser.add_argument('operation', help='Operation to perform', choices=['list', 'apply'])
+parser.add_argument('operation', help='Operation to perform', choices=['list', 'apply', 'fill'])
 # project root directory from args
 parser.add_argument('--project-root', help='Project root directory', required=True)
 # input empty from args
@@ -33,10 +33,17 @@ if not ssm.isProjectEnabled():
   exit(1)
 
 try:
-    worker.process(
-        project_root, ssm, list=args.operation == 'list', 
-        apply=args.operation == 'apply', input_empty=args.input_empty
-    )
+    # switch call based on operation
+    match args.operation:
+        case 'list':
+            worker.list(project_root, ssm, input_empty=args.input_empty)
+        case 'apply':
+            worker.apply(project_root, ssm, input_empty=args.input_empty)
+        case 'fill':
+            worker.fill(project_root, ssm)
+        case _:
+            print('ERROR: Operation not supported! Exiting...')
+            exit(1)
 except Exception as e:
     print('ERROR: ' + str(e))
     exit(1)
