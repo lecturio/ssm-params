@@ -16,7 +16,7 @@ INDEX_FILE = 0
 INDEX_NAME = 1
 INDEX_VALUE = 2
 
-def process(project_root, ssm, list=False, apply=False):
+def process(project_root, ssm, list=False, apply=False, input_empty=False):
   table = []
   headers = ['File', 'Name', 'Value']
   # find all files in the project root recursively that end in .ssm
@@ -30,7 +30,7 @@ def process(project_root, ssm, list=False, apply=False):
               if apply:
                 shutil.copy(ssm_file, non_ssm_file)
               
-              replacements = get_params(ssm_file, ssm, param_prefix, apply)
+              replacements = get_params(ssm_file, ssm, param_prefix, input_empty)
               table += replacements
 
               if apply:
@@ -46,7 +46,7 @@ def process(project_root, ssm, list=False, apply=False):
   if list:
     print(tabulate(table, headers, tablefmt='grid'))
               
-def get_params(ssm_file, ssm, param_prefix, stop_on_empty=False):
+def get_params(ssm_file, ssm, param_prefix, input_empty=False):
   # open the file
   with open(ssm_file, 'r') as f:
     # read file line by line
@@ -71,8 +71,16 @@ def get_params(ssm_file, ssm, param_prefix, stop_on_empty=False):
 
         value = ssm.get_parameter(param)
 
-        if not value and stop_on_empty:
-          raise Exception('Empty SSM parameter: ' + param)
+        if not value:
+          if not input_empty:
+            raise Exception('Empty SSM parameter: ' + param)
+          
+          # read value from input until provided
+          while not value:
+            value = input('Enter value for ' + param + ': ')
+          # put the value into SSM
+          ssm.put_parameter(param, value)
+
 
         replacements.append((param_prefix, replace, value)) 
         return replacements
