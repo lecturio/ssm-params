@@ -3,10 +3,11 @@
 import argparse
 import os
 import sys
-from lib.ssm import AdapterSSM
-import lib.worker as worker
+from src.ssm import AdapterSSM
+import src.worker as worker
 
 parser = argparse.ArgumentParser(description='Read SSM Parameter')
+parser.add_argument('--project', help='The project scope', required=True)
 # operation from args
 parser.add_argument('operation', help='Operation to perform', choices=['list', 'apply'])
 # project root directory from args
@@ -20,11 +21,14 @@ args = parser.parse_args()
 project_root = os.path.abspath(args.project_root)
 # if project root does not exist, exit
 if not os.path.exists(project_root):
-    print('Project root does not exist')
+    print('ERROR: Project root does not exist! Exiting...')
     sys.exit(1)
 
 # TODO: make not dependable on profile, should also work with env vars
-ssm = AdapterSSM(profile_name=args.profile)
+ssm = AdapterSSM(project=args.project, boto={ 'profile_name': args.profile })
+if not ssm.isProjectEnabled():
+  print('ERROR: Project is not enabled! Exiting...')
+  exit(1)
 
 worker.process(project_root, ssm, list=args.operation == 'list', apply=args.operation == 'apply')
 

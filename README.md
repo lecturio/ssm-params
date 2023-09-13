@@ -10,7 +10,6 @@ CRUD AWS SSM Parameter Store operations for a project.
 
 # TODOS:
 
-- add project name as a top-level prefix
 - add mode to specify value for empty remote param on the fly when applying
 - validate that the value being put is for a param in the project root
 - add diff and clean
