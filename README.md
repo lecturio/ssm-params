@@ -10,5 +10,4 @@ CRUD AWS SSM Parameter Store operations for a project.
 
 # TODOS:
 
-- add mode to specify value for empty remote param on the fly when applying
 - add diff and clean
