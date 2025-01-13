@@ -106,7 +106,7 @@ def get_params(ssm_file, non_ssm_file, ssm, param_prefix, stop_on_empty=False, i
             if not value:
               raise Exception(f"Missing parameter value for {param_name} in file: {non_ssm_file}")          
           # put the value into SSM
-          ssm.put_parameter(param, value)\
+          ssm.put_parameter(param, value)
           
       replacements.append((param_prefix, replace, value)) 
 
