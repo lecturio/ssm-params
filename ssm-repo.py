@@ -10,7 +10,7 @@ parser = argparse.ArgumentParser(description="Read SSM Parameter")
 parser.add_argument("--project", help="The project scope", required=True)
 # operation from args
 parser.add_argument(
-    "operation", help="Operation to perform", choices=["list", "apply", "fill"]
+    "operation", help="Operation to perform", choices=["list", "apply", "fill", "auto_fill"]
 )
 # project root directory from args
 parser.add_argument("--project-root", help="Project root directory", required=True)
@@ -41,6 +41,8 @@ try:
             worker.apply(project_root, ssm, input_empty=args.input_empty)
         case "fill":
             worker.fill(project_root, ssm)
+        case "auto_fill":
+            worker.auto_fill(project_root, ssm)
         case _:
             print("ERROR: Operation not supported! Exiting...")
             exit(1)

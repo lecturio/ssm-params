@@ -26,7 +26,10 @@ def apply(project_root, ssm, input_empty=False):
 def fill(project_root, ssm):
   process(project_root, ssm, input_empty=True)
 
-def process(project_root, ssm, list=False, apply=False, input_empty=False, stop_on_empty=False):
+def auto_fill(project_root, ssm):
+  process(project_root, ssm, auto_fill=True, input_empty=True)
+
+def process(project_root, ssm, list=False, apply=False, input_empty=False, stop_on_empty=False , auto_fill=False):
   table = []
   headers = ['File', 'Name', 'Value']
   # find all files in the project root recursively that end in .ssm
@@ -36,27 +39,26 @@ def process(project_root, ssm, list=False, apply=False, input_empty=False, stop_
         ssm_file = os.path.join(root, file)
         param_prefix = '/' + os.path.relpath(ssm_file, project_root).replace('.ssm', '')
         non_ssm_file = ssm_file.replace('.ssm', '')
-
-        if apply:
-          shutil.copy(ssm_file, non_ssm_file)
         
-        replacements = get_params(ssm_file, ssm, param_prefix, stop_on_empty, input_empty)
+        replacements = get_params(ssm_file, non_ssm_file, ssm, param_prefix, stop_on_empty, input_empty, auto_fill)
         table += replacements
 
         if apply:
+          shutil.copy(ssm_file, non_ssm_file)
           # read the content of non_ssm_file
           with open(non_ssm_file, 'r') as rf:
             content = rf.read()
 
+          for replacement in replacements:
+            placeholder = SSM_PARAMETER_PREFIX + replacement[INDEX_NAME] + SSM_PARAMETER_SUFFIX
+            content = content.replace(placeholder, replacement[INDEX_VALUE])
+          
           with open(non_ssm_file, 'w') as wf:
-            for replacement in replacements:
-              placeholder = SSM_PARAMETER_PREFIX + replacement[INDEX_NAME] + SSM_PARAMETER_SUFFIX
-              content = content.replace(placeholder, replacement[INDEX_VALUE])
-              wf.write(content)
+            wf.write(content)
   if list:
     print(tabulate(table, headers, tablefmt='grid'))
               
-def get_params(ssm_file, ssm, param_prefix, stop_on_empty=False, input_empty=False):
+def get_params(ssm_file, non_ssm_file, ssm, param_prefix, stop_on_empty=False, input_empty=False , auto_fill=False):
   replacements = []
   # open the file
   with open(ssm_file, 'r') as f:
@@ -80,6 +82,9 @@ def get_params(ssm_file, ssm, param_prefix, stop_on_empty=False, input_empty=Fal
       # the param name
       param = param_prefix + '/' + replace
 
+      # get string in line before prefix_index
+      param_name = line[:prefix_index]
+
       value = ssm.get_parameter(param)
 
       if not value:
@@ -88,10 +93,21 @@ def get_params(ssm_file, ssm, param_prefix, stop_on_empty=False, input_empty=Fal
         
         # read value from input until provided
         if input_empty:
-          while not value:
-            value = input('Enter value for ' + param + ': ')
+          if not auto_fill:
+            while not value:
+              value = input('Enter value for ' + param + ': ')
+          else:
+            # search line contains param_name in the non_ssm_file and get string after param_name
+            with open(non_ssm_file, 'r') as nf:
+              for nf_line in nf:
+                if param_name in nf_line:
+                  value = nf_line.split(param_name)[-1].strip()
+                  print(f"Recording a new SSM parameter \033[1m{param}\033[0m: \033[1m{value}\033[0m")               
+            if not value:
+              raise Exception(f"Missing parameter value for {param_name} in file: {non_ssm_file}")          
           # put the value into SSM
-          ssm.put_parameter(param, value)
+          ssm.put_parameter(param, value)\
+          
       replacements.append((param_prefix, replace, value)) 
 
   return replacements
