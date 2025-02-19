@@ -56,7 +56,7 @@ def process(project_root, ssm, list=False, apply=False, input_empty=False, stop_
           with open(non_ssm_file, 'w') as wf:
             wf.write(content)
   if list:
-    print(tabulate(table, headers, tablefmt='grid'))
+    print(tabulate(table, headers, tablefmt='text'))
               
 def get_params(ssm_file, non_ssm_file, ssm, param_prefix, stop_on_empty=False, input_empty=False , auto_fill=False):
   replacements = []
